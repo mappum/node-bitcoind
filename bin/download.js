@@ -13,7 +13,6 @@ const { homedir } = require('os')
 const { join, dirname } = require('path')
 const { get } = require('axios')
 const ProgressBar = require('progress')
-const unzip = require('unzip').Parse
 const mkdirp = require('mkdirp').sync
 const tar = require('tar')
 const rimraf = require('rimraf').sync
