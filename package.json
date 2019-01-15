@@ -1,0 +1,30 @@
+{
+  "name": "bitcoind",
+  "version": "1.0.0",
+  "description": "Spawn a Bitcoin Core node",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "preinstall": "rm -f ./bin/bitcoind && touch ./bin/bitcoind",
+    "install": "node ./bin/download.js",
+    "update": "node ./bin/update.js"
+  },
+  "keywords": [
+    "bitcoin",
+    "core",
+    "full",
+    "node"
+  ],
+  "author": "Matt Bell <mappum@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "axios": "^0.18.0",
+    "cross-spawn": "^6.0.5",
+    "debug": "^4.1.1",
+    "mkdirp": "^0.5.1",
+    "progress": "^2.0.3",
+    "rimraf": "^2.6.3",
+    "tar": "^4.4.8",
+    "unzip": "^0.1.11"
+  }
+}
