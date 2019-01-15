@@ -35,7 +35,7 @@ try {
   if (err.code !== 'ENOENT') throw err
 }
 
-console.log(`downloading Bitcoin Core v${bitcoindVersion}`)
+console.log(`downloading Bitcoin Core v${bitcoindVersion}\n`)
 let archiveFilename = getArchiveFilename(bitcoindVersion)
 let torrentPath = join(__dirname, 'bitcoin.torrent')
 
@@ -79,9 +79,8 @@ torrentClient.add(torrentPath, function (torrent) {
   // TODO: windows unzip
 
   // verify hash of file
-  // Since the SHA256SUMS file comes from npm, and the binary
-  // comes from GitHub, both npm AND GitHub would need to be
-  // compromised for the binary download to be compromised.
+  // WebTorrent verifies hashes too, but BitTorrent protocol
+  // only uses sha1 which is breakable
   let hasher = createHash('sha256')
   stream.on('data', (chunk) => hasher.update(chunk))
   stream.on('end', () => {
