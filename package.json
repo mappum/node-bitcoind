@@ -29,5 +29,14 @@
     "progress": "^2.0.3",
     "rimraf": "^2.6.3",
     "tar": "^4.4.8"
-  }
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mappum/node-bitcoind.git"
+  },
+  "bugs": {
+    "url": "https://github.com/mappum/node-bitcoind/issues"
+  },
+  "homepage": "https://github.com/mappum/node-bitcoind#readme"
 }
