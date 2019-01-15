@@ -2,7 +2,7 @@
 
 Run a Bitcoin Core full node from Node.js.
 
-On install, this package downloads a prebuilt binary from the [official Bitcoin Core releases](https://bitcoin.org/en/download), and checks it against a known SHA256 hash.
+On install, this package downloads a prebuilt binary from the [official Bitcoin Core release torrent](https://bitcoin.org/en/download) via [WebTorrent](https://github.com/webtorrent/webtorrent), and checks it against a known SHA256 hash.
 
 ## Usage
 `npm install bitcoind`
