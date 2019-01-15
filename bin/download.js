@@ -11,11 +11,11 @@ const {
 const { createGunzip } = require('zlib')
 const { homedir } = require('os')
 const { join, dirname } = require('path')
-const { get } = require('axios')
 const ProgressBar = require('progress')
 const mkdirp = require('mkdirp').sync
 const tar = require('tar')
 const rimraf = require('rimraf').sync
+const WebTorrent = require('webtorrent')
 
 let versionPath = join(__dirname, 'version')
 let bitcoindVersion = readFileSync(versionPath, 'utf8').trim()
@@ -36,26 +36,39 @@ try {
 }
 
 console.log(`downloading Bitcoin Core v${bitcoindVersion}`)
-let binaryDownloadUrl = getBinaryDownloadURL(bitcoindVersion)
-get(binaryDownloadUrl, { responseType: 'stream' }).then((res) => {
-  if (res.status !== 200) {
-    throw Error(`Request failed, status: ${res.status}`)
+let archiveFilename = getArchiveFilename(bitcoindVersion)
+let torrentPath = join(__dirname, 'bitcoin.torrent')
+
+let torrentClient = new WebTorrent()
+torrentClient.add(torrentPath, function (torrent) {
+  // see https://github.com/webtorrent/webtorrent/issues/164#issuecomment-248395202
+  torrent.deselect(0, torrent.pieces.length - 1, false)
+
+  let archiveFile
+  for (let file of torrent.files) {
+    if (file.name === archiveFilename) {
+      file.select()
+      archiveFile = file
+    } else {
+      file.deselect()
+    }
   }
-  let length = +res.headers['content-length']
 
   let template = '[:bar] :rate/Mbps :percent :etas'
   let bar = new ProgressBar(template, {
     complete: '=',
     incomplete: ' ',
     width: 20,
-    total: length / 1e6 * 8
+    total: archiveFile.length / 1e6 * 8
   })
 
   let extractPath = join(__dirname, `bitcoin-${bitcoindVersion}`)
   let tempBinPath = join(extractPath, 'bin/bitcoind')
   let shasumPath = join(__dirname, 'SHA256SUMS.asc')
 
-  res.data
+  let stream = archiveFile.createReadStream()
+
+  stream
     .pipe(createGunzip())
     .pipe(tar.extract({
       cwd: __dirname,
@@ -70,8 +83,10 @@ get(binaryDownloadUrl, { responseType: 'stream' }).then((res) => {
   // comes from GitHub, both npm AND GitHub would need to be
   // compromised for the binary download to be compromised.
   let hasher = createHash('sha256')
-  res.data.on('data', (chunk) => hasher.update(chunk))
-  res.data.on('end', () => {
+  stream.on('data', (chunk) => hasher.update(chunk))
+  stream.on('end', () => {
+    torrentClient.destroy()
+
     console.log()
 
     let actualHash = hasher.digest().toString('hex')
@@ -84,7 +99,7 @@ get(binaryDownloadUrl, { responseType: 'stream' }).then((res) => {
     for (let line of shasums.split('\n').slice(3)) {
       let [ shasum, filename ] = line.split(/\s+/)
       if (shasum.length !== 64) continue
-      if (binaryDownloadUrl.endsWith(filename)) {
+      if (archiveFilename.endsWith(filename)) {
         expectedHash = shasum
         break
       }
@@ -104,13 +119,13 @@ get(binaryDownloadUrl, { responseType: 'stream' }).then((res) => {
   })
 
   // increment progress bar
-  res.data.on('data', (chunk) => bar.tick(chunk.length / 1e6 * 8))
+  stream.on('data', (chunk) => bar.tick(chunk.length / 1e6 * 8))
 })
 
 // gets a URL to the .tar.gz or .zip, hosted on bitcoin.org
-function getBinaryDownloadURL (version) {
-  function url (filename) {
-    return `https://bitcoin.org/bin/bitcoin-core-${version}/bitcoin-${version}-${filename}`
+function getArchiveFilename (version) {
+  function withPrefix (filename) {
+    return `bitcoin-${version}-${filename}`
   }
 
   function throwUnknownArchError () {
@@ -119,17 +134,17 @@ function getBinaryDownloadURL (version) {
 
   switch (process.platform) {
     case 'darwin':
-      return url('osx64.tar.gz')
+      return withPrefix('osx64.tar.gz')
     case 'linux':
       switch (process.arch) {
         case 'x32':
-          return url('i686-pc-linux-gnu.tar.gz')
+          return withPrefix('i686-pc-linux-gnu.tar.gz')
         case 'x64':
-          return url('x86_64-linux-gnu.tar.gz')
+          return withPrefix('x86_64-linux-gnu.tar.gz')
         case 'arm':
-          return url('arm-linux-gnueabihf.tar.gz')
+          return withPrefix('arm-linux-gnueabihf.tar.gz')
         case 'arm64':
-          return url('aarch64-linux-gnu.tar.gz')
+          return withPrefix('aarch64-linux-gnu.tar.gz')
         default:
           throwUnknownArchError()
       }
@@ -137,9 +152,9 @@ function getBinaryDownloadURL (version) {
     // case 'win32':
     //   switch (process.arch) {
     //     case 'x32':
-    //       return url('win32.zip')
+    //       return withPrefix('win32.zip')
     //     case 'x64':
-    //       return url('win64.zip')
+    //       return withPrefix('win64.zip')
     //     default:
     //       throwUnknownArchError()
     //   }

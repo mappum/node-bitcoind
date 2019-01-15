@@ -21,16 +21,18 @@
   "author": "Matt Bell <mappum@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "axios": "^0.18.0",
     "bitcoin-core": "^2.0.0",
     "cross-spawn": "^6.0.5",
     "debug": "^4.1.1",
     "mkdirp": "^0.5.1",
     "progress": "^2.0.3",
     "rimraf": "^2.6.3",
-    "tar": "^4.4.8"
+    "tar": "^4.4.8",
+    "webtorrent": "^0.103.0"
   },
-  "devDependencies": {},
+  "devDependencies": {
+    "axios": "^0.18.0"
+  },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/mappum/node-bitcoind.git"

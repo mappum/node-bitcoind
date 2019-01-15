@@ -23,6 +23,17 @@ async function main ({ argv }) {
   }
   console.log('✅ updated SHA256SUMS file')
 
+  let torrentPath = join(__dirname, 'bitcoin.torrent')
+  let torrentUrl = `https://bitcoin.org/bin/bitcoin-core-${version}/bitcoin-${version}.torrent`
+  try {
+    let res = await get(torrentUrl, { responseType: 'arraybuffer' })
+    writeFileSync(torrentPath, res.data)
+  } catch (err) {
+    console.error(`Request failed with status ${err.response.status}`)
+    return 1
+  }
+  console.log('✅ updated torrent file')
+
   let versionPath = join(__dirname, 'version')
   writeFileSync(versionPath, version)
   console.log('✅ updated version file')
