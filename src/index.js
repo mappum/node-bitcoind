@@ -83,6 +83,7 @@ function node (opts = {}) {
   let rpc = new RpcClient({
     username: opts.rpcuser,
     password: opts.rpcpassword,
+    port: opts.rpcport,
     network,
     logger: { debug }
   })
