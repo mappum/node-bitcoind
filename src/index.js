@@ -2,7 +2,7 @@
 
 let { randomBytes } = require('crypto')
 let debug = require('debug')('bitcoind')
-let _spawn = require('cross-spawn')
+let _spawn = require('execa')
 let RpcClient = require('bitcoin-core')
 let flags = require('./flags.js')
 
@@ -33,7 +33,7 @@ function spawn (opts) {
   }
 
   let promise = new Promise((resolve, reject) => {
-    child.once('exit', (code) => {
+    child.once('exit', code => {
       if (code !== 0) {
         let err
         if (Date.now() - start < 1000) {
@@ -53,7 +53,7 @@ function spawn (opts) {
   return child
 }
 
-function maybeError (res) {
+function maybeError(res) {
   if (res.killed) return
   if (res.then != null) {
     return res.then(maybeError)
@@ -63,12 +63,15 @@ function maybeError (res) {
   }
 }
 
-function node (opts = {}) {
-  opts = Object.assign({
-    server: true,
-    rpcuser: randomString(),
-    rpcpassword: randomString()
-  }, opts)
+function node(opts = {}) {
+  opts = Object.assign(
+    {
+      server: true,
+      rpcuser: randomString(),
+      rpcpassword: randomString()
+    },
+    opts
+  )
 
   if (opts.rpcport == null && opts.regtest) {
     opts.rpcport = 18332
@@ -83,6 +86,7 @@ function node (opts = {}) {
   let rpc = new RpcClient({
     username: opts.rpcuser,
     password: opts.rpcpassword,
+    port: opts.rpcport,
     network,
     logger: { debug }
   })
@@ -90,7 +94,7 @@ function node (opts = {}) {
   let started
   return Object.assign(child, {
     rpc,
-    started (timeout) {
+    started(timeout) {
       if (started) return started
       started = waitForRpc(rpc, child, timeout)
       return started
@@ -98,13 +102,13 @@ function node (opts = {}) {
   })
 }
 
-let waitForRpc = wait(async (client) => {
+let waitForRpc = wait(async client => {
   await client.getNetworkInfo()
   return true
 })
 
-function wait (condition) {
-  return async function (client, child, timeout = 30 * 1000) {
+function wait(condition) {
+  return async function(client, child, timeout = 30 * 1000) {
     let start = Date.now()
     while (true) {
       let elapsed = Date.now() - start
@@ -121,11 +125,11 @@ function wait (condition) {
   }
 }
 
-function sleep (ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms))
 }
 
-function randomString () {
+function randomString() {
   return randomBytes(10).toString('base64')
 }
 
